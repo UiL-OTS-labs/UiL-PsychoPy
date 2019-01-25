@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-import gui
 
-from gui.uilwindow import UilWindowGtk
-from gui.uilwindow import UilApp
-import gui.mainloop
+from uil.gui.uilwindow import UilWindowGtk
+from uil.gui.uilwindow import UilApp
+import uil.gui.mainloop
 import sys
 
 # program name
@@ -15,4 +14,4 @@ app     = UilApp(mainwin)
 
 
 if __name__ == "__main__":
-    gui.mainloop.start(app, mainwin, sys.argv)
+    uil.gui.mainloop.start(app, mainwin, sys.argv)
