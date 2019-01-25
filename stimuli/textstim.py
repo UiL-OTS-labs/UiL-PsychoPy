@@ -13,7 +13,7 @@ from gi.repository import Pango
 from gi.repository import PangoCairo
 from gi.repository import cairo
 #from cairo import SVGSurface
-import .uti
+from ..utils import color
 
 class TextStimulus(cairo.ImageSuface):
     """TextStimulus create a picture that contains nicely formatted text"""
@@ -25,6 +25,7 @@ class TextStimulus(cairo.ImageSuface):
         self.text = text if text else ""
         self.cr = cairo.Context(self)
         self.layout = PangoCairo.create_layout(self.cr)
+        self.background_color = color.Color(1, 1, 1)
 
     def draw():
         """draws the current stimulus"""
