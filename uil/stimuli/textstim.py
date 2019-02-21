@@ -1,115 +1,147 @@
 #!/usr/bin/env python3
 
-import cairo as c
+"""This module contains utilities to generate Nicely formated text stimuli
+"""
+
+import cairo
 import gi
-#gi.require_foreign("cairo")
+gi.require_foreign("cairo")
 gi.require_version("Gtk", "3.0")
 gi.require_version("Pango", "1.0")
-gi.require_version("cairo", "1.0")
 gi.require_version('PangoCairo', '1.0')
 
-from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository import PangoCairo
-from gi.repository import cairo
-#from cairo import SVGSurface
 from ..utils import color
 
-class TextStimulus(cairo.ImageSuface):
+
+class Font:
+    """A description of a font to use with"""
+
+    # Font styles
+    STYLE_NORMAL = Pango.Style.NORMAL
+    STYLE_OBLIQUE = Pango.Style.OBLIQUE
+    STYLE_ITALIC = Pango.Style.ITALIC
+
+    WEIGHT_THIN = Pango.Weight.THIN
+    WEIGHT_ULTRALIGHT = Pango.Weight.ULTRALIGHT
+    WEIGHT_LIGHT = Pango.Weight.LIGHT
+    WEIGHT_SEMILIGHT = Pango.Weight.SEMILIGHT
+    WEIGHT_BOOK = Pango.Weight.BOOK
+    WEIGHT_NORMAL = Pango.Weight.NORMAL
+    WEIGHT_MEDIUM = Pango.Weight.MEDIUM
+    WEIGHT_SEMIBOLD = Pango.Weight.SEMIBOLD
+    WEIGHT_BOLD = Pango.Weight.BOLD
+    WEIGHT_ULTRABOLD = Pango.Weight.ULTRABOLD
+    WEIGHT_HEAVY = Pango.Weight.HEAVY
+    WEIGHT_ULTRAHEAVY = Pango.Weight.ULTRAHEAVY
+
+    def __init__(self,
+                 family,
+                 size=16,
+                 style=STYLE_NORMAL,
+                 weight=WEIGHT_NORMAL):
+        self.description = Pango.FontDescription()
+        self.set_size(size)
+        self.set_weight(weight)
+        self.set_style(style)
+        self.set_family(family)
+
+    def set_weight(self, weight):
+        """set the font weight"""
+        self.description.set_weight(weight)
+
+    def set_style(self, style):
+        """set the font style"""
+        self.description.set_style(style)
+
+    def set_size(self, size):
+        """set the font size"""
+        self.description.set_size(size * Pango.SCALE)
+
+    def set_family(self, fam):
+        """Return the font family"""
+        self.description.set_family(fam)
+
+    def __str__(self):
+        """Return a string that represents a font, this string can be
+        used to construct a new Font instance with the Font.from_string()
+        static method.
+        """
+        return self.description.to_string()
+
+    @staticmethod
+    def list_font_families():
+        map = PangoCairo.font_map_get_default()
+        fonts = Pango.FontMap.list_families(map)
+        fonts = [f.get_name() for f in fonts]
+        return fonts # Pango.pango_font_map_list_families()
+
+    @staticmethod
+    def from_string(fontstr):
+        """Obtain a new font from a string description"""
+        descr = Pango.FontDescription.from_string(fontstr)
+        new = Font()
+        new.description = descr
+        return new
+
+
+class TextStimulus:
     """TextStimulus create a picture that contains nicely formatted text"""
 
-    def __init__(self, width, height, text=none):
-        super(self).__init__(cairo.FORMAT_ARGB32, width, height)
+    def __init__(self, width, height, font, text=None):
+        self.surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
         self.width = width
         self.height = height
-        self.text = text if text else ""
-        self.cr = cairo.Context(self)
+        self.indent = 50.0
+        self.cr = cairo.Context(self.surf)
         self.layout = PangoCairo.create_layout(self.cr)
         self.background_color = color.Color(1, 1, 1)
+        self.fontcolor = color.Color()
+        if text:
+            self.set_text(text)
+        self.font = font
 
-    def draw():
+    def draw(self):
         """draws the current stimulus"""
-        cr.save()
-        cr.scale(self.width, self.height)
-        cr.move_to(0,0)
-        cr.line_to(1,0)
-        cr.line_to(1,1)
-        cr.line_to(0,1)
-        cr.close_path()
-        cr.restore()
-        cr.set_fill_color
+        self.cr.save()
+        self.cr.scale(self.width, self.height)
+        self.cr.move_to(0, 0)
+        self.cr.line_to(1, 0)
+        self.cr.line_to(1, 1)
+        self.cr.line_to(0, 1)
+        self.cr.close_path()
+        self.cr.restore()
 
+        c = self.background_color
+        print(c)
+        self.cr.set_source_rgba(c.r, c.g, c.b, c.a)
+        self.cr.fill()
 
+        self.layout.set_font_description(self.font.description)
 
+        self.layout.set_justify(True)
+        self.layout.set_width(self.width * Pango.SCALE)
+        self.layout.set_wrap(Pango.WrapMode.WORD)
+        self.layout.set_indent(self.indent * Pango.SCALE)
+        self.layout.set_markup(self.text, len(self.text.encode('utf8')))
 
-def _print_rect(rect, name=None):
-    print(
-        "{}\tx={}\ty={}\twidth={}\theight={}\t".format(
-            name if name else "rect",
-            rect.x,
-            rect.y,
-            rect.width,
-            rect.height
-            )
-         )
-    
+        # draw text with font color
+        c = self.fontcolor
+        print(c, self.font)
+        self.cr.set_source_rgba(c.r, c.g, c.b, c.a)
 
-if __name__ == "__main__":
-    width, height = 800, 800
-    indent        = 50
+        # Create path for contents
+        PangoCairo.layout_path(self.cr, self.layout)
+        self.cr.fill()
 
-    outfn = 'pango_pic.png'
-    stroke_col  = 0.0,0.0,0.0,1.0
-    fill_col    = 1.0,0.0,0.0,1.0
+    def save_as_png(self, fn):
+        """Store the image surface as png."""
+        self.surf.write_to_png(fn)
 
-    surf        = c.ImageSurface(c.FORMAT_ARGB32, width, height)
-    cr          = c.Context(surf)
-
-    fontstr = "Dejavu Sans 48"
-    string  = "Hello, World!";
-    lstring =("Hello, World! This is a very long sentence without a linebreak. "
-              "This one has one though.\n"
-              "<b>blaat.txt</b> <u>Dit</u> is op een nieuwe alinea.")
-
-    cr.save()
-    cr.scale(width, height)
-
-    cr.move_to(0, 0)
-    cr.line_to(0, 1)
-    cr.line_to(1, 1)
-
-    cr.line_to(1, 0)
-    cr.line_to(0, 0)
-
-    cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
-    cr.fill()  # use cr.fill_preserve to preserve the path
-    cr.restore()
-
-    layout = PangoCairo.create_layout(cr)
-    layout.set_justify(True)
-    layout.set_width(width * Pango.SCALE)
-    layout.set_font_description(Pango.FontDescription.from_string(fontstr))
-    layout.set_wrap(Pango.WrapMode.WORD)
-    layout.set_indent(indent*Pango.SCALE)
-    layout.set_markup(lstring, len(lstring))
-
-    # Create path for contents
-    PangoCairo.layout_path(cr, layout)
-
-    # stroke the letters (draw the outline)
-    cr.set_line_width(2.0)
-    cr.set_source_rgba(*stroke_col)
-    cr.stroke_preserve()
-    # fill the letters
-    # cr.set_source_rgba(*fill_col)
-    # cr.fill_preserve()
-    # PangoCairo.show_layout(cr, layout)
-    ink_rect, logical_rect = layout.get_pixel_extents()
-    print_rect(ink_rect, "ink_rect")
-    print_rect(logical_rect, "logical_rect")
-    ink_rect, logical_rect = layout.get_pixel_extents()
-    print_rect(ink_rect, "ink_rect")
-    print_rect(logical_rect, "logical_rect")
-    surf.write_to_png(outfn)
-    surf.finish()
-
+    def set_text(self, text, draw=False):
+        """Set the text and (re-) draw the stimulus"""
+        print(text)
+        self.text = text
+        if draw:
+            self.draw()

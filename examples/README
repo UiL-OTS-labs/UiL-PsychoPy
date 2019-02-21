@@ -1,0 +1,14 @@
+
+This directory contains some file's that are examples on how to use the
+UiL-OTS psychopy utilities.
+
+If you want to run these against the current version of uil_psychopy, than make
+sure to set the PYTHONPATH to one directory below this readme. If you haven't
+installed the UiL-OTS psychopy utilities, your program is going to crash
+with an ImportError. Or even more dangerous, you are actually importing
+the already installed version, so you are not running against the development
+edition of the UiL-OTS psychopy utilities, but the system version.
+
+Some IDE's e.g. pycharm are quite capable of putting the ROOT of this project
+on the python path.
+
