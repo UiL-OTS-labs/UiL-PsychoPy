@@ -36,6 +36,9 @@ class Color:
         self.g = float(g)
         self.a = float(a)
 
+    def __repr__(self):
+        return "Color({}, {}, {}, {})".format(self.r, self.b, self.g, self.a)
+
     @staticmethod
     def from_ints(r=0, g=0, b=0, a=255, bits=8):
         """Construct a new color value from integer color values"""
