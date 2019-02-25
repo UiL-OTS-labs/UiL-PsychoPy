@@ -7,12 +7,13 @@ def uint_to_float(value,  bits=8):
     will be change to the maximal or 0 respectively.
     This function is based on the
     """
-    intmax = 2**bits - 1
+    value = float(value)
+    intmax = float(2**bits - 1)
     if value > intmax:
         value = intmax
     elif value < 0:
         value = 0
-    return value / (intmax)
+    return value / intmax
 
 
 def float_to_uint(value, bits=8):
