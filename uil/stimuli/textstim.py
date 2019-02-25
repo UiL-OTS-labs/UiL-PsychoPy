@@ -14,6 +14,8 @@ from gi.repository import Pango
 from gi.repository import PangoCairo
 from ..utils import color
 
+import numpy as np
+
 
 class Font:
     """A description of a font to use with"""
@@ -94,8 +96,8 @@ class TextStimulus:
         self.width = width
         self.height = height
         self.indent = 50.0
-        self.cr = cairo.Context(self.surf)
-        self.layout = PangoCairo.create_layout(self.cr)
+        #self.cr = cairo.Context(self.surf)
+        #self.layout = PangoCairo.create_layout(self.cr)
         self.background_color = color.Color(1, 1, 1)
         self.fontcolor = color.Color()
         if text:
@@ -104,36 +106,42 @@ class TextStimulus:
 
     def draw(self):
         """draws the current stimulus"""
-        self.cr.save()
-        self.cr.scale(self.width, self.height)
-        self.cr.move_to(0, 0)
-        self.cr.line_to(1, 0)
-        self.cr.line_to(1, 1)
-        self.cr.line_to(0, 1)
-        self.cr.close_path()
-        self.cr.restore()
+        cr = cairo.Context(self.surf)
+        layout = PangoCairo.create_layout(cr)
+        context = layout.get_context()
+        context.set_base_gravity(Pango.Gravity.AUTO)
+        layout.set_markup(self.text, len(self.text.encode('utf8')))
+
+        cr.save()
+        cr.scale(self.width, self.height)
+        cr.move_to(0, 0)
+        cr.line_to(1, 0)
+        cr.line_to(1, 1)
+        cr.line_to(0, 1)
+        cr.close_path()
+        cr.restore()
 
         c = self.background_color
-        print(c)
-        self.cr.set_source_rgba(c.r, c.g, c.b, c.a)
-        self.cr.fill()
+        # print(c)
+        cr.set_source_rgba(c.r, c.g, c.b, c.a)
+        cr.fill()
 
-        self.layout.set_font_description(self.font.description)
-
-        self.layout.set_justify(True)
-        self.layout.set_width(self.width * Pango.SCALE)
-        self.layout.set_wrap(Pango.WrapMode.WORD)
-        self.layout.set_indent(self.indent * Pango.SCALE)
-        self.layout.set_markup(self.text, len(self.text.encode('utf8')))
+        layout.set_font_description(self.font.description)
+        layout.set_justify(True)
+        layout.set_width(self.width * Pango.SCALE)
+        layout.set_wrap(Pango.WrapMode.WORD)
+        layout.set_indent(self.indent * Pango.SCALE)
 
         # draw text with font color
         c = self.fontcolor
-        print(c, self.font)
-        self.cr.set_source_rgba(c.r, c.g, c.b, c.a)
+        cr.set_source_rgba(c.r, c.g, c.b, c.a)
 
         # Create path for contents
-        PangoCairo.layout_path(self.cr, self.layout)
-        self.cr.fill()
+        PangoCairo.layout_path(cr, layout)
+        cr.fill()
+
+        # make sure drawing commands are finished before it is used.
+        self.surf.flush()
 
     def save_as_png(self, fn):
         """Store the image surface as png."""
@@ -141,7 +149,33 @@ class TextStimulus:
 
     def set_text(self, text, draw=False):
         """Set the text and (re-) draw the stimulus"""
-        print(text)
         self.text = text
         if draw:
             self.draw()
+
+    def size(self):
+        """Return a tuple of width, height"""
+        return self.width, self.height
+
+    def psychopy_texture(self):
+        """Returns a numpy array that is suitable to use as a psychopy texture.
+        psychopy likes its textures in a [-1.0, 1.0] range, so the result
+        from this function should math that.
+
+        returns tuple of np.array
+        """
+        import matplotlib.pyplot as plt
+        tmax = 255.0
+        nchannels = 4 #alpha, red, green, blue
+        out = np.array(self.surf.get_data(), dtype='float')
+        out = np.asarray(self.surf.get_data(),dtype='float')
+        print("out.shape", out.shape, len(out.shape))
+        out /= tmax
+        out = out*2.0 - 1.0
+        combined = out.reshape([self.height, self.width, nchannels])
+        texture = combined[:, :, 0:3]
+        #texture =
+        print ("Texture.shape = ", texture.shape)
+        mask = combined[:, :, 3]
+        # return texture, mask
+        return np.flip(texture, 0), mask
